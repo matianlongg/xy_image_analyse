@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>评分历史记录 - 图片评分系统</title>
+    <title>Rating History - Design Creativity Evaluation</title>
     <!-- 引入Vue.js -->
     <script src="static/js/vue.min.js"></script>
     <!-- 引入Axios -->
@@ -275,19 +275,19 @@
         <!-- 固定菜单 -->
         <div class="fixed-menu">
             <div class="menu-container">
-                <a href="#" class="logo"><i class="fas fa-camera-retro"></i>图片评分系统</a>
+                <a href="#" class="logo"><i class="fas fa-camera-retro"></i>Design Creativity Evaluation</a>
                 <div class="menu-items">
-                    <a class="menu-item" href="http://127.0.0.1:5000/">
-                        <i class="fas fa-upload"></i>上传图片
+                    <a class="menu-item" href="http://127.0.0.1:10000/">
+                        <i class="fas fa-upload"></i>Uploading Images
                     </a>
-                    <a class="menu-item" href="http://127.0.0.1:5000/?view=rating">
-                        <i class="fas fa-star-half-alt"></i>评分图片
+                    <a class="menu-item" href="http://127.0.0.1:10000/?view=rating">
+                        <i class="fas fa-star-half-alt"></i>Evaluating Images
                     </a>
-                    <a class="menu-item" href="http://127.0.0.1:5000/results">
-                        <i class="fas fa-trophy"></i>查看结果
+                    <a class="menu-item" href="http://127.0.0.1:10000/results">
+                        <i class="fas fa-trophy"></i>View Results
                     </a>
-                    <a class="menu-item active" href="http://127.0.0.1:5000/rating-history">
-                        <i class="fas fa-history"></i>评分历史
+                    <a class="menu-item active" href="http://127.0.0.1:10000/rating-history">
+                        <i class="fas fa-history"></i>Rating History
                     </a>
                 </div>
             </div>
@@ -295,21 +295,21 @@
         
         <div class="container">
             <div class="header">
-                <h1>评分历史记录</h1>
+                <h1>Rating History</h1>
             </div>
             
             <div class="section">
-                <h2 class="section-title">评分记录列表</h2>
+                <h2 class="section-title">Rating record list</h2>
                 
                 <div v-if="loading" class="loading">
-                    <div>加载中，请稍候...</div>
+                    <div>Loading, please wait...</div>
                 </div>
                 
                 <div v-else-if="records.length === 0" class="no-records">
-                    <h3>暂无评分记录</h3>
-                    <p>您还没有对任何图片进行评分。</p>
+                    <h3>No rating record yet</h3>
+                    <p>You haven't rated any images yet。</p>
                     <div class="navigation">
-                        <a href="http://127.0.0.1:5000/?view=rating" class="button">去评分图片</a>
+                        <a href="http://127.0.0.1:10000/?view=rating" class="button">Go to rate pictures</a>
                     </div>
                 </div>
                 
@@ -322,29 +322,29 @@
                     <table class="records-table">
                         <thead>
                             <tr>
-                                <th width="80">图片</th>
-                                <th>图片ID</th>
-                                <th>评分</th>
-                                <th>评分时间</th>
-                                <th>操作</th>
+                                <th width="80">Image</th>
+                                <th>Image ID</th>
+                                <th>Rating</th>
+                                <th>Rating time</th>
+                                <th>operate</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr v-for="record in filteredRecords" :key="record.id">
-                                <td data-label="图片">
-                                    <img :src="'http://127.0.0.1:5000/static/uploads/' + record.filename" 
+                                <td data-label="Image">
+                                    <img :src="'http://127.0.0.1:10000/static/uploads/' + record.filename" 
                                          class="thumbnail" :alt="record.filename">
                                 </td>
-                                <td data-label="图片ID">{{ record.image_id.substring(0, 8) }}...</td>
-                                <td data-label="评分">
+                                <td data-label="Image ID">{{ record.image_id.substring(0, 8) }}...</td>
+                                <td data-label="Rating">
                                     <span :class="['score-badge', getScoreBadgeClass(record.score)]">
                                         {{ record.score_text }}
                                     </span>
                                 </td>
-                                <td data-label="评分时间">{{ formatDateTime(record.rating_time) }}</td>
-                                <td data-label="操作">
-                                    <a :href="'http://127.0.0.1:5000/results?image=' + record.image_id" 
-                                       class="button">查看图片</a>
+                                <td data-label="Rating time">{{ formatDateTime(record.rating_time) }}</td>
+                                <td data-label="operate">
+                                    <a :href="'http://127.0.0.1:10000/results?image=' + record.image_id" 
+                                       class="button">Viewing Image</a>
                                 </td>
                             </tr>
                         </tbody>
@@ -375,7 +375,7 @@
                     const urlParams = new URLSearchParams(window.location.search);
                     const imageId = urlParams.get('image_id');
                     
-                    let url = 'http://127.0.0.1:5000/rating_records';
+                    let url = 'http://127.0.0.1:10000/rating_records';
                     if (imageId) {
                         url += `?image_id=${imageId}`;
                     }
@@ -389,7 +389,7 @@
                         .catch(error => {
                             console.error('Error loading rating records:', error);
                             this.loading = false;
-                            alert('加载评分历史记录失败');
+                            alert('Failed to load rating history');
                         });
                 },
                 

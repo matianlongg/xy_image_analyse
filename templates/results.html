@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>图片评分结果 - 图片评分系统</title>
+    <title>Evaluating Results - Design Creativity Evaluation</title>
     <!-- 引入Vue.js -->
     <script src="static/js/vue.min.js"></script>
     <!-- 引入Axios -->
@@ -367,19 +367,19 @@
         <!-- 固定菜单 -->
         <div class="fixed-menu">
             <div class="menu-container">
-                <a href="#" class="logo"><i class="fas fa-camera-retro"></i>图片评分系统</a>
+                <a href="#" class="logo"><i class="fas fa-camera-retro"></i>Design Creativity Evaluation</a>
                 <div class="menu-items">
-                    <a class="menu-item" href="http://127.0.0.1:5000/">
-                        <i class="fas fa-upload"></i>上传图片
+                    <a class="menu-item" href="http://127.0.0.1:10000/">
+                        <i class="fas fa-upload"></i>Uploading Images
                     </a>
-                    <a class="menu-item" href="http://127.0.0.1:5000/?view=rating">
-                        <i class="fas fa-star-half-alt"></i>评分图片
+                    <a class="menu-item" href="http://127.0.0.1:10000/?view=rating">
+                        <i class="fas fa-star-half-alt"></i>Evaluating Images
                     </a>
-                    <a class="menu-item active" href="http://127.0.0.1:5000/results">
-                        <i class="fas fa-trophy"></i>查看结果
+                    <a class="menu-item active" href="http://127.0.0.1:10000/results">
+                        <i class="fas fa-trophy"></i>Viewing Results
                     </a>
-                    <a class="menu-item" href="http://127.0.0.1:5000/rating-history">
-                        <i class="fas fa-history"></i>评分历史
+                    <a class="menu-item" href="http://127.0.0.1:10000/rating-history">
+                        <i class="fas fa-history"></i>Evaluation History
                     </a>
                 </div>
             </div>
@@ -387,34 +387,34 @@
         
         <div class="container">
             <div class="header">
-                <h1>图片评分结果</h1>
+                <h1>Image rating results</h1>
             </div>
             
             <div class="section">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                    <h2 class="section-title">图片排名</h2>
+                    <h2 class="section-title">Image Ranking</h2>
                     <button class="button" style="padding: 6px 12px;" @click="refreshRankedImages">
-                        <i class="fas fa-sync-alt"></i> 刷新结果
+                        <i class="fas fa-sync-alt"></i> Refresh Results
                     </button>
                 </div>
                 
                 <div v-if="loading" class="loading">
-                    <div>加载中，请稍候...</div>
+                    <div>Loading, please wait...</div>
                 </div>
                 
                 <div v-else-if="images.length === 0" class="no-results">
-                    <h3>暂无评分数据</h3>
-                    <p>还没有图片被评分，请先上传并评分图片。</p>
+                    <h3>No rating data yet</h3>
+                    <p>No pictures have been rated yet, please upload and rate the pictures first。</p>
                     <div class="navigation">
-                        <a href="http://127.0.0.1:5000/" class="button">返回上传页面</a>
+                        <a href="http://127.0.0.1:10000/" class="button">Return to upload page</a>
                     </div>
                 </div>
                 
                 <div v-else>
                     <div v-if="countDuplicateRatings() > 0" class="warning-message">
                         <i class="fas fa-exclamation-triangle"></i> 
-                        检测到有 {{ countDuplicateRatings() }} 张图片具有相同的评分结果 (红色边框标识)。
-                        建议您继续评分这些图片，以获得更准确的排名结果。
+                        There are {{ countDuplicateRatings() }} images that were detected with the same rating results (marked with red borders).
+                        We recommend that you continue to rate these images to get more accurate ranking results.
                     </div>
 
                     <div class="image-grid">
@@ -424,7 +424,7 @@
                                 <img :src="image.url" :alt="'排名 #' + (index + 1)">
                             </div>
                             <div class="image-info">
-                                <div class="image-rank">排名 #{{ index + 1 }}</div>
+                                <div class="image-rank">Raking #{{ index + 1 }}</div>
                                 <div>
                                     <div class="rating-bar">
                                         <div class="rating-value" 
@@ -433,8 +433,8 @@
                                     </div>
                                 </div>
                                 <div class="image-stats">
-                                    <div>平均分: {{ formatRating(image.avg_rating) }}</div>
-                                    <div>评分次数: {{ image.rating_count }}</div>
+                                    <div>Average score: {{ formatRating(image.avg_rating) }}</div>
+                                    <div>Rating times: {{ image.rating_count }}</div>
                                 </div>
                                 <div class="tournament-stats">
                                     <div class="stats-title" @click="toggleStats(image.id)">
@@ -478,18 +478,18 @@
                                     </div>
                                 </div>
                                 <div class="image-actions" style="margin-top: 10px;">
-                                    <a :href="'http://127.0.0.1:5000/rating-history?image_id=' + image.id" 
+                                    <a :href="'http://127.0.0.1:10000/rating-history?image_id=' + image.id" 
                                        style="font-size: 14px; color: #3498db; text-decoration: none;">
-                                        <i class="fas fa-history"></i> 查看评分历史
+                                        <i class="fas fa-history"></i> View Rating History
                                     </a>
                                 </div>
                             </div>
-                            <div v-if="hasDuplicateRating(image)" class="duplicate-badge">并列</div>
+                            <div v-if="hasDuplicateRating(image)" class="duplicate-badge">Parallel</div>
                         </div>
                     </div>
                     
                     <div class="navigation" v-if="countDuplicateRatings() > 0">
-                        <button class="button" @click="goToRatingPage">继续评分解决并列</button>
+                        <button class="button" @click="goToRatingPage">Continue rating to resolve ties</button>
                     </div>
                 </div>
             </div>
@@ -514,7 +514,7 @@
                     this.loading = true;
                     
                     // 添加refresh参数以强制刷新排序结果
-                    let url = 'http://127.0.0.1:5000/ranked_images';
+                    let url = 'http://127.0.0.1:10000/ranked_images';
                     if (refresh) {
                         url += '?refresh=1';
                     }
@@ -556,7 +556,7 @@
                 showDuplicateRatingAlert(duplicateCount) {
                     const confirmResult = confirm(`检测到有 ${duplicateCount} 张图片具有并列评分结果，为了获得更准确的排名，建议继续进行评分。是否前往评分页面？`);
                     if (confirmResult) {
-                        window.location.href = 'http://127.0.0.1:5000/?view=rating';
+                        window.location.href = 'http://127.0.0.1:10000/?view=rating';
                     }
                 },
                 
@@ -582,7 +582,7 @@
                 
                 // 跳转到评分页面
                 goToRatingPage() {
-                    window.location.href = 'http://127.0.0.1:5000/?view=rating';
+                    window.location.href = 'http://127.0.0.1:10000/?view=rating';
                 },
                 
                 // 切换统计信息的显示状态

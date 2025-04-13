@@ -1228,7 +1228,7 @@ def get_uploaded_images():
         images.append({
             'id': row['id'],
             'filename': row['filename'],
-            'url': f"http://127.0.0.1:5000/static/uploads/{row['filename']}",
+            'url': f"http://127.0.0.1:10000/static/uploads/{row['filename']}",
             'upload_time': row['upload_time'],
             'rating_count': row['rating_count'],
             'original_name': row['original_name']
@@ -1439,4 +1439,4 @@ def ranked_images():
 if __name__ == '__main__':
     # 确保数据库初始化
     init_db()
-    app.run(debug=True, host='0.0.0.0', port=10000) 
+    app.run(debug=True, host="0.0.0.0", port=10000) 
