@@ -1439,4 +1439,4 @@ def ranked_images():
 if __name__ == '__main__':
     # 确保数据库初始化
     init_db()
-    app.run(debug=True) 
+    app.run(debug=True, host='0.0.0.0', port=10000) 
