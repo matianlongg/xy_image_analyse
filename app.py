@@ -6,7 +6,7 @@ import random
 import json
 import numpy as np
 import logging
-from flask import Flask, request, jsonify, render_template, send_from_directory
+from flask import Flask, request, jsonify, render_template, send_from_directory, session, redirect, url_for
 from datetime import datetime
 from flask_cors import CORS  # 导入CORS
 from collections import defaultdict, deque
@@ -26,6 +26,9 @@ app.jinja_env.block_start_string = '{%'
 app.jinja_env.block_end_string = '%}'
 app.jinja_env.comment_start_string = '{#'
 app.jinja_env.comment_end_string = '#}'
+
+# 配置session
+app.secret_key = 'your-secret-key-here'  # 用于session加密
 
 CORS(app)  # 启用CORS，允许所有来源的跨域请求
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
@@ -88,6 +91,35 @@ def init_db():
     )
     ''')
     
+    # 创建用户表
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE NOT NULL,
+        password TEXT NOT NULL,
+        role TEXT NOT NULL DEFAULT 'user',
+        created_at TIMESTAMP NOT NULL
+    )
+    ''')
+    
+    # 检查是否已存在管理员账户
+    cursor.execute("SELECT COUNT(*) FROM users WHERE username = 'admin'")
+    if cursor.fetchone()[0] == 0:
+        # 添加默认管理员账户
+        cursor.execute(
+            "INSERT INTO users (username, password, role, created_at) VALUES (?, ?, ?, ?)",
+            ('admin', 'admin123', 'admin', datetime.now())
+        )
+    
+    # 检查是否已存在普通用户账户
+    cursor.execute("SELECT COUNT(*) FROM users WHERE username = 'user'")
+    if cursor.fetchone()[0] == 0:
+        # 添加默认普通用户账户
+        cursor.execute(
+            "INSERT INTO users (username, password, role, created_at) VALUES (?, ?, ?, ?)",
+            ('user', 'user123', 'user', datetime.now())
+        )
+    
     conn.commit()
     conn.close()
     logger.info("数据库初始化完成")
@@ -98,16 +130,74 @@ def before_request():
     if not os.path.exists(app.config['DATABASE']):
         init_db()
 
+# 登录验证装饰器
+def login_required(f):
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    decorated_function.__name__ = f.__name__
+    return decorated_function
+
+# 管理员验证装饰器
+def admin_required(f):
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            return redirect(url_for('login'))
+        
+        conn = sqlite3.connect(app.config['DATABASE'])
+        cursor = conn.cursor()
+        cursor.execute("SELECT role FROM users WHERE id = ?", (session['user_id'],))
+        user = cursor.fetchone()
+        conn.close()
+        
+        if not user or user[0] != 'admin':
+            return redirect(url_for('index'))
+        return f(*args, **kwargs)
+    decorated_function.__name__ = f.__name__
+    return decorated_function
+
+# 登录页面
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        
+        conn = sqlite3.connect(app.config['DATABASE'])
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, role FROM users WHERE username = ? AND password = ?", (username, password))
+        user = cursor.fetchone()
+        conn.close()
+        
+        if user:
+            session['user_id'] = user[0]
+            session['username'] = username
+            session['role'] = user[1]
+            return redirect(url_for('index'))
+        else:
+            return render_template('login.html', error='username or password error')
+    
+    return render_template('login.html')
+
+# 登出
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('login'))
+
 # 首页
 @app.route('/')
+@login_required
 def index():
     return render_template('index.html')
 
 # 上传图片
 @app.route('/upload', methods=['POST'])
+@login_required
 def upload_images():
     if 'images' not in request.files:
-        return jsonify({'error': '没有找到图片文件'}), 400
+        return jsonify({'error': 'no image file found'}), 400
     
     files = request.files.getlist('images')
     uploaded_files = []
@@ -339,6 +429,7 @@ def is_sorting_sufficient():
 
 # 获取需要评分的图片
 @app.route('/get_images_to_rate', methods=['GET'])
+@login_required
 def get_images_to_rate():
     conn = sqlite3.connect(app.config['DATABASE'])
     conn.row_factory = sqlite3.Row
@@ -923,11 +1014,13 @@ def detect_duplicates_with_tc(sorted_images):
 
 # 页面 - 查看排序结果
 @app.route('/results')
+@login_required
 def results():
     return render_template('results.html')
 
 # 评分图片
 @app.route('/rate', methods=['POST'])
+@login_required
 def rate_images():
     data = request.json
     if not data or 'ratings' not in data:
@@ -1078,6 +1171,7 @@ def update_sorting_results(conn):
 
 # 获取评分状态信息（包括并列数、剩余评分次数等）
 @app.route('/rating_status', methods=['GET'])
+@login_required
 def rating_status():
     conn = sqlite3.connect(app.config['DATABASE'])
     conn.row_factory = sqlite3.Row
@@ -1164,6 +1258,7 @@ def rating_status():
 
 # 获取评分记录
 @app.route('/rating_records', methods=['GET'])
+@login_required
 def get_rating_records():
     image_id = request.args.get('image_id')
     
@@ -1207,11 +1302,13 @@ def get_rating_records():
 
 # 页面 - 查看评分记录
 @app.route('/rating-history')
+@login_required
 def rating_history():
     return render_template('rating_history.html')
 
 # 获取已上传的所有图片
 @app.route('/uploaded_images', methods=['GET'])
+@login_required
 def get_uploaded_images():
     conn = sqlite3.connect(app.config['DATABASE'])
     conn.row_factory = sqlite3.Row
@@ -1228,7 +1325,7 @@ def get_uploaded_images():
         images.append({
             'id': row['id'],
             'filename': row['filename'],
-            'url': f"http://127.0.0.1:10000/static/uploads/{row['filename']}",
+            'url': f"/static/uploads/{row['filename']}",
             'upload_time': row['upload_time'],
             'rating_count': row['rating_count'],
             'original_name': row['original_name']
@@ -1240,6 +1337,7 @@ def get_uploaded_images():
 
 # 删除图片
 @app.route('/delete_image/<image_id>', methods=['DELETE'])
+@login_required
 def delete_image(image_id):
     conn = sqlite3.connect(app.config['DATABASE'])
     cursor = conn.cursor()
@@ -1275,6 +1373,7 @@ def delete_image(image_id):
 
 # 删除所有图片
 @app.route('/delete_all_images', methods=['DELETE'])
+@login_required
 def delete_all_images():
     conn = sqlite3.connect(app.config['DATABASE'])
     cursor = conn.cursor()
@@ -1317,6 +1416,7 @@ def delete_all_images():
 
 # 获取排序后的图片列表
 @app.route('/ranked_images', methods=['GET'])
+@login_required
 def ranked_images():
     # 添加refresh参数，用于强制刷新排序结果
     refresh = request.args.get('refresh', '0') == '1'
@@ -1434,6 +1534,40 @@ def ranked_images():
             "clear_relation_value": SORTING_STATE['clear_relation_ratio']
         }
     })
+
+# 用户管理页面
+@app.route('/user_management')
+@admin_required
+def user_management():
+    return render_template('user_management.html')
+
+# 修改用户密码
+@app.route('/change_password', methods=['POST'])
+@admin_required
+def change_password():
+    username = request.form.get('username')
+    new_password = request.form.get('new_password')
+    
+    if not username or not new_password:
+        return render_template('user_management.html', error='用户名和新密码不能为空')
+    
+    conn = sqlite3.connect(app.config['DATABASE'])
+    cursor = conn.cursor()
+    
+    # 检查用户是否存在
+    cursor.execute("SELECT id FROM users WHERE username = ?", (username,))
+    user = cursor.fetchone()
+    
+    if not user:
+        conn.close()
+        return render_template('user_management.html', error='用户不存在')
+    
+    # 更新密码
+    cursor.execute("UPDATE users SET password = ? WHERE username = ?", (new_password, username))
+    conn.commit()
+    conn.close()
+    
+    return render_template('user_management.html', success='密码修改成功')
 
 # 启动应用
 if __name__ == '__main__':

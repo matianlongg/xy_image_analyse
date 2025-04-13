@@ -367,21 +367,30 @@
         <!-- 固定菜单 -->
         <div class="fixed-menu">
             <div class="menu-container">
+                {% if session.role == 'admin' %}
+                <a href="/user_management" class="logo"><i class="fas fa-camera-retro"></i>Design Creativity Evaluation</a>
+                {% endif %}
+                {% if session.role == 'user' %}
                 <a href="#" class="logo"><i class="fas fa-camera-retro"></i>Design Creativity Evaluation</a>
+                {% endif %}
                 <div class="menu-items">
-                    <a class="menu-item" href="http://127.0.0.1:10000/">
+                    <a class="menu-item" href="/">
                         <i class="fas fa-upload"></i>Uploading Images
                     </a>
-                    <a class="menu-item" href="http://127.0.0.1:10000/?view=rating">
+                    <a class="menu-item" href="/?view=rating">
                         <i class="fas fa-star-half-alt"></i>Evaluating Images
                     </a>
-                    <a class="menu-item active" href="http://127.0.0.1:10000/results">
+                    <a class="menu-item active" href="/results">
                         <i class="fas fa-trophy"></i>Viewing Results
                     </a>
-                    <a class="menu-item" href="http://127.0.0.1:10000/rating-history">
+                    <a class="menu-item" href="/rating-history">
                         <i class="fas fa-history"></i>Evaluation History
                     </a>
                 </div>
+            </div>
+            <div style="color: white;position: absolute;right: 20px;top: 20px;display: flex;align-items: center;">
+                <span >welcome, {$ session.username $}</span>
+                <a class="nav-link" href="/logout" style="color: white;margin-left: 20px;">exit</a>
             </div>
         </div>
         
@@ -406,7 +415,7 @@
                     <h3>No rating data yet</h3>
                     <p>No pictures have been rated yet, please upload and rate the pictures first。</p>
                     <div class="navigation">
-                        <a href="http://127.0.0.1:10000/" class="button">Return to upload page</a>
+                        <a href="/" class="button">Return to upload page</a>
                     </div>
                 </div>
                 
@@ -478,7 +487,7 @@
                                     </div>
                                 </div>
                                 <div class="image-actions" style="margin-top: 10px;">
-                                    <a :href="'http://127.0.0.1:10000/rating-history?image_id=' + image.id" 
+                                    <a :href="'/rating-history?image_id=' + image.id" 
                                        style="font-size: 14px; color: #3498db; text-decoration: none;">
                                         <i class="fas fa-history"></i> View Rating History
                                     </a>
@@ -514,7 +523,7 @@
                     this.loading = true;
                     
                     // 添加refresh参数以强制刷新排序结果
-                    let url = 'http://127.0.0.1:10000/ranked_images';
+                    let url = '/ranked_images';
                     if (refresh) {
                         url += '?refresh=1';
                     }
@@ -556,7 +565,7 @@
                 showDuplicateRatingAlert(duplicateCount) {
                     const confirmResult = confirm(`检测到有 ${duplicateCount} 张图片具有并列评分结果，为了获得更准确的排名，建议继续进行评分。是否前往评分页面？`);
                     if (confirmResult) {
-                        window.location.href = 'http://127.0.0.1:10000/?view=rating';
+                        window.location.href = '/?view=rating';
                     }
                 },
                 
@@ -582,7 +591,7 @@
                 
                 // 跳转到评分页面
                 goToRatingPage() {
-                    window.location.href = 'http://127.0.0.1:10000/?view=rating';
+                    window.location.href = '/?view=rating';
                 },
                 
                 // 切换统计信息的显示状态

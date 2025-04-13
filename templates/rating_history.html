@@ -275,21 +275,30 @@
         <!-- 固定菜单 -->
         <div class="fixed-menu">
             <div class="menu-container">
+                {% if session.role == 'admin' %}
+                <a href="/user_management" class="logo"><i class="fas fa-camera-retro"></i>Design Creativity Evaluation</a>
+                {% endif %}
+                {% if session.role == 'user' %}
                 <a href="#" class="logo"><i class="fas fa-camera-retro"></i>Design Creativity Evaluation</a>
+                {% endif %}
                 <div class="menu-items">
-                    <a class="menu-item" href="http://127.0.0.1:10000/">
+                    <a class="menu-item" href="/">
                         <i class="fas fa-upload"></i>Uploading Images
                     </a>
-                    <a class="menu-item" href="http://127.0.0.1:10000/?view=rating">
+                    <a class="menu-item" href="/?view=rating">
                         <i class="fas fa-star-half-alt"></i>Evaluating Images
                     </a>
-                    <a class="menu-item" href="http://127.0.0.1:10000/results">
+                    <a class="menu-item" href="/results">
                         <i class="fas fa-trophy"></i>View Results
                     </a>
-                    <a class="menu-item active" href="http://127.0.0.1:10000/rating-history">
+                    <a class="menu-item active" href="/rating-history">
                         <i class="fas fa-history"></i>Rating History
                     </a>
                 </div>
+            </div>
+            <div style="color: white;position: absolute;right: 20px;top: 20px;display: flex;align-items: center;">
+                <span >welcome, {$ session.username $}</span>
+                <a class="nav-link" href="/logout" style="color: white;margin-left: 20px;">exit</a>
             </div>
         </div>
         
@@ -309,7 +318,7 @@
                     <h3>No rating record yet</h3>
                     <p>You haven't rated any images yet。</p>
                     <div class="navigation">
-                        <a href="http://127.0.0.1:10000/?view=rating" class="button">Go to rate pictures</a>
+                        <a href="/?view=rating" class="button">Go to rate pictures</a>
                     </div>
                 </div>
                 
@@ -332,7 +341,7 @@
                         <tbody>
                             <tr v-for="record in filteredRecords" :key="record.id">
                                 <td data-label="Image">
-                                    <img :src="'http://127.0.0.1:10000/static/uploads/' + record.filename" 
+                                    <img :src="'/static/uploads/' + record.filename" 
                                          class="thumbnail" :alt="record.filename">
                                 </td>
                                 <td data-label="Image ID">{{ record.image_id.substring(0, 8) }}...</td>
@@ -343,7 +352,7 @@
                                 </td>
                                 <td data-label="Rating time">{{ formatDateTime(record.rating_time) }}</td>
                                 <td data-label="operate">
-                                    <a :href="'http://127.0.0.1:10000/results?image=' + record.image_id" 
+                                    <a :href="'/results?image=' + record.image_id" 
                                        class="button">Viewing Image</a>
                                 </td>
                             </tr>
@@ -375,7 +384,7 @@
                     const urlParams = new URLSearchParams(window.location.search);
                     const imageId = urlParams.get('image_id');
                     
-                    let url = 'http://127.0.0.1:10000/rating_records';
+                    let url = '/rating_records';
                     if (imageId) {
                         url += `?image_id=${imageId}`;
                     }
