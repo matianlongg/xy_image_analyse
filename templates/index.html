@@ -1,0 +1,1597 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图片评分系统</title>
+    <!-- 引入Vue.js -->
+    <script src="static/js/vue.min.js"></script>
+    <!-- 引入Axios -->
+    <script src="static/js/axios.min.js"></script>
+    <!-- 使用CDN加载Font Awesome -->
+    <link rel="stylesheet" href="static/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f7f9fc;
+            color: #333;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            padding-top: 80px; /* 为固定菜单腾出空间 */
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px 0;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        h1 {
+            color: #2c3e50;
+            margin: 0;
+            font-weight: 500;
+        }
+        .section {
+            background-color: #fff;
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        .section-title {
+            color: #2c3e50;
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-weight: 500;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        .upload-area {
+            border: 2px dashed #d1d8e0;
+            border-radius: 5px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 20px;
+        }
+        .upload-area:hover {
+            border-color: #7f8c8d;
+            background-color: #f8f9fa;
+        }
+        .upload-area input {
+            display: none;
+        }
+        .button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+            transition: background-color 0.3s;
+        }
+        .button:hover {
+            background-color: #2980b9;
+        }
+        .secondary-button {
+            background-color: #95a5a6;
+        }
+        .secondary-button:hover {
+            background-color: #7f8c8d;
+        }
+        .success-button {
+            background-color: #2ecc71;
+        }
+        .success-button:hover {
+            background-color: #27ae60;
+        }
+        .file-list {
+            margin-top: 20px;
+        }
+        .file-item {
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .rating-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .image-container {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: nowrap; /* 防止换行 */
+            margin-bottom: 30px;
+            position: relative;
+            gap: 2%; 
+        }
+        .image-card {
+            flex: 0 0 32%; /* 固定宽度，不伸缩 */
+            margin-bottom: 20px;
+            border: 1px solid #eee;
+            border-radius: 5px;
+            overflow: hidden;
+            box-shadow: 0 1px 5px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s, box-shadow 0.3s, opacity 0.5s;
+            position: relative;
+            min-height: 250px; 
+        }
+        .image-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        .image-card.selected {
+            transform: translateY(-8px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+            border: 2px solid #3498db;
+        }
+        .image-card img {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+            display: block;
+        }
+        .image-actions {
+            display: flex;
+            justify-content: center;
+            padding: 15px 10px;
+            background-color: #f7f9fc;
+            border-top: 1px solid #eee;
+        }
+        .rating-button {
+            margin: 0 5px;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+            position: relative;
+            outline: none;
+        }
+        .rating-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+        .rating-button:active {
+            transform: translateY(1px);
+        }
+        .rating-button.selected {
+            transform: translateY(-3px);
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+            font-weight: bold;
+        }
+        .rating-button.selected::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 70%;
+            height: 3px;
+            background-color: currentColor;
+            border-radius: 3px;
+        }
+        .like-button {
+            background-color: #2ecc71;
+            color: white;
+        }
+        .like-button:hover, .like-button.selected {
+            background-color: #27ae60;
+        }
+        .neutral-button {
+            background-color: #f1c40f;
+            color: white;
+        }
+        .neutral-button:hover, .neutral-button.selected {
+            background-color: #f39c12;
+        }
+        .dislike-button {
+            background-color: #e74c3c;
+            color: white;
+        }
+        .dislike-button:hover, .dislike-button.selected {
+            background-color: #c0392b;
+        }
+        .selected {
+            transform: scale(1.1);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        }
+        .navigation {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            font-size: 18px;
+            color: #7f8c8d;
+        }
+        .status-message {
+            margin: 20px 0;
+            padding: 10px;
+            border-radius: 4px;
+            text-align: center;
+        }
+        .success-message {
+            background-color: #d5f5e3;
+            color: #27ae60;
+        }
+        .error-message {
+            background-color: #fadbd8;
+            color: #c0392b;
+        }
+        .rating-status {
+            text-align: center;
+            padding: 5px;
+            background-color: #eaf2fa;
+            color: #2c3e50;
+            font-weight: 500;
+            font-size: 14px;
+            border-top: 1px dashed #ccc;
+        }
+        
+        /* 新的评分样式 */
+        .rating-indicator {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: rgba(0, 0, 0, 0.7); /* 增加背景不透明度 */
+            color: white;
+            font-weight: bold;
+            font-size: 24px;
+            transition: all 0.3s;
+            z-index: 5; /* 降低z-index，确保低于取消按钮 */
+            pointer-events: none; /* 不拦截鼠标事件 */
+        }
+        
+        .rating-icon {
+            font-size: 56px; /* 增大图标尺寸 */
+            margin-bottom: 15px;
+            animation: pulse 0.5s ease-in-out;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5); /* 添加文字阴影 */
+            pointer-events: none; /* 不拦截鼠标事件 */
+        }
+        
+        .rating-text {
+            font-size: 24px; /* 增大文字尺寸 */
+            text-transform: uppercase;
+            font-weight: bold;
+            text-shadow: 0 2px 5px rgba(0, 0, 0, 0.5); /* 添加文字阴影 */
+            pointer-events: none; /* 不拦截鼠标事件 */
+        }
+        
+        .like-icon {
+            color: #2ecc71;
+        }
+        
+        .neutral-icon {
+            color: #f1c40f;
+        }
+        
+        .dislike-icon {
+            color: #e74c3c;
+        }
+        
+        .rating-in-progress {
+            opacity: 0.7;
+            transform: scale(0.95);
+            pointer-events: none;
+        }
+        
+        /* 评分后图片淡出动画 */
+        .image-fade-out {
+            animation: fadeOut 0.8s forwards;
+            pointer-events: none;
+            position: relative;
+            z-index: 1;
+        }
+        
+        @keyframes fadeOut {
+            0% { 
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+            70% {
+                opacity: 0.3;
+                transform: translateY(-10px) scale(0.9);
+            }
+            100% { 
+                opacity: 0.2; /* 保持一定的透明度而不是完全隐藏 */
+                transform: translateY(-10px) scale(0.85);
+                /* 使用可见性隐藏而不是改变尺寸 */
+                pointer-events: none; /* 禁止鼠标事件 */
+            }
+        }
+        
+        /* 图片淡入动画 */
+        @keyframes fadeIn {
+            0% {
+                opacity: 0;
+                transform: translateY(20px) scale(0.9);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        
+        .image-fade-in {
+            animation: fadeIn 0.8s forwards;
+        }
+        
+        .rating-instructions {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+            text-align: center;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .rating-instructions p {
+            margin: 5px 0;
+        }
+        
+        /* 评分任务类型提示样式 */
+        .rating-task-info {
+            background-color: #eaf2fa;
+            border-radius: 8px;
+            padding: 12px 15px;
+            margin: 15px 0;
+            text-align: center;
+            font-size: 15px;
+            color: #2c3e50;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .rating-task-info p {
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .rating-task-info i {
+            font-size: 18px;
+            margin-right: 8px;
+            color: #3498db;
+        }
+        
+        .rating-task-info strong {
+            color: #e74c3c;
+            margin: 0 4px;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+        
+        /* 固定菜单样式 */
+        .fixed-menu {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background-color: #34495e;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+        .menu-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+        }
+        .logo {
+            color: white;
+            font-size: 22px;
+            font-weight: 500;
+            padding: 15px 0;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            transition: transform 0.3s;
+        }
+        .logo:hover {
+            transform: scale(1.05);
+        }
+        .logo i {
+            margin-right: 10px;
+            font-size: 26px;
+            color: #3498db;
+        }
+        .menu-items {
+            display: flex;
+        }
+        .menu-item {
+            color: white;
+            text-decoration: none;
+            padding: 18px 20px;
+            font-weight: 500;
+            transition: all 0.3s;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .menu-item:before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background-color: #3498db;
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+        }
+        .menu-item:hover:before, 
+        .menu-item.active:before {
+            transform: translateX(0);
+        }
+        .menu-item i {
+            margin-right: 8px;
+            font-size: 18px;
+            transition: transform 0.3s;
+        }
+        .menu-item:hover i, 
+        .menu-item.active i {
+            transform: scale(1.2);
+            color: #3498db;
+        }
+        .menu-item:hover, .menu-item.active {
+            background-color: #2c3e50;
+        }
+        
+        @media (max-width: 768px) {
+            .image-container {
+                flex-wrap: wrap; /* 小屏幕允许换行 */
+                justify-content: center;
+                gap: 15px;
+            }
+            .image-card {
+                flex: 0 0 100%; /* 小屏幕下占满宽度 */
+                margin-bottom: 15px;
+            }
+            .menu-container {
+                flex-direction: column;
+                padding: 10px;
+            }
+            .menu-items {
+                width: 100%;
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+            .menu-item {
+                padding: 12px 15px;
+                font-size: 14px;
+                justify-content: center;
+                text-align: center;
+                flex: 1;
+                min-width: 100px;
+            }
+            .menu-item i {
+                margin-right: 5px;
+            }
+            .logo {
+                margin-bottom: 5px;
+                font-size: 18px;
+            }
+            .logo i {
+                font-size: 22px;
+            }
+            .cancel-rating {
+                top: 15px;
+                right: 15px;
+                width: 45px; /* 在小屏幕上更容易点击 */
+                height: 45px;
+            }
+        }
+        
+        /* 评分进度样式 */
+        .rating-progress {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 25px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        .progress-box {
+            margin-bottom: 15px;
+        }
+        .progress-title {
+            font-weight: 500;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        .progress-bar-container {
+            height: 8px;
+            background-color: #ecf0f1;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 5px;
+        }
+        .progress-bar {
+            height: 100%;
+            background-color: #3498db;
+            border-radius: 4px;
+            transition: width 0.5s;
+        }
+        .progress-text {
+            font-size: 14px;
+            color: #7f8c8d;
+            margin-top: 10px;
+        }
+        
+        .progress-text div {
+            margin: 5px 0;
+            display: flex;
+            align-items: center;
+        }
+        
+        .progress-text i {
+            margin-right: 5px;
+            font-size: 14px;
+            width: 16px;
+            text-align: center;
+        }
+        
+        .progress-text strong {
+            color: #e74c3c;
+            font-weight: bold;
+            margin: 0 5px;
+        }
+        
+        .duplicate-info {
+            display: flex;
+            align-items: flex-start;
+            padding: 10px;
+            background-color: #fef8e8;
+            border-left: 4px solid #f1c40f;
+            border-radius: 4px;
+        }
+        .duplicate-info i {
+            font-size: 20px;
+            color: #f1c40f;
+            margin-right: 10px;
+            margin-top: 3px;
+        }
+        .duplicate-info p {
+            margin: 5px 0;
+            font-size: 14px;
+            color: #8a6d3b;
+        }
+        .highlight {
+            color: #e74c3c;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        
+        /* 已上传图片列表样式 */
+        .uploaded-images-section {
+            margin-top: 30px;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+        .subsection-title {
+            font-size: 18px;
+            color: #34495e;
+            margin-bottom: 15px;
+        }
+        .uploaded-images-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 15px;
+        }
+        .uploaded-image-card {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            transition: transform 0.2s;
+            position: relative;
+        }
+        .uploaded-image-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+        }
+        .image-thumbnail {
+            width: 100%;
+            height: 150px;
+            overflow: hidden;
+        }
+        .image-thumbnail img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .image-info {
+            padding: 12px;
+        }
+        .image-filename {
+            font-weight: 500;
+            margin-bottom: 5px;
+            font-size: 14px;
+            color: #2c3e50;
+            word-break: break-all;
+        }
+        .image-meta {
+            font-size: 12px;
+            color: #7f8c8d;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+        .image-actions {
+            padding: 0 12px 12px 12px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .delete-button {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+            width: 100%;
+        }
+        .delete-button:hover {
+            background-color: #c0392b;
+        }
+        .delete-button:disabled {
+            background-color: #e0e0e0;
+            cursor: not-allowed;
+        }
+        
+        /* 评分指示 */
+        .task-instruction {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            text-align: center;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            border-left: 4px solid #3498db;
+        }
+        .task-prompt {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 15px;
+            font-weight: 500;
+            color: #2c3e50;
+            font-size: 16px;
+        }
+        .task-prompt i {
+            margin-right: 10px;
+            font-size: 20px;
+            color: #3498db;
+        }
+        .instruction-text {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 15px;
+            padding: 15px;
+            background-color: #fff;
+            border-radius: 6px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        .rating-instruction-item {
+            display: flex;
+            align-items: center;
+            font-size: 15px;
+            padding: 8px 10px;
+            border-radius: 4px;
+            background-color: #f8f9fa;
+            transition: transform 0.2s;
+        }
+        .rating-instruction-item:hover {
+            transform: translateX(5px);
+            background-color: #eef2f7;
+        }
+        .rating-instruction-item i {
+            margin-right: 12px;
+            font-size: 18px;
+            color: #3498db;
+        }
+        .rating-equals {
+            margin: 0 10px;
+            color: #7f8c8d;
+            font-weight: bold;
+        }
+        .rating-value {
+            font-weight: 500;
+            border-radius: 4px;
+            padding: 4px 8px;
+            margin-left: auto;
+            display: inline-flex;
+            align-items: center;
+        }
+        .rating-value i {
+            margin-right: 5px !important;
+            color: inherit !important;
+        }
+        .rating-value.positive {
+            background-color: #e8f8f5;
+            color: #2ecc71;
+        }
+        .rating-value.neutral {
+            background-color: #fef9e7;
+            color: #f1c40f;
+        }
+        .rating-value.negative {
+            background-color: #fdedec;
+            color: #e74c3c;
+        }
+        .rating-note {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 15px;
+            font-size: 14px;
+            color: #7f8c8d;
+            background-color: #fcf8e3;
+            padding: 10px;
+            border-radius: 4px;
+            border-left: 3px solid #f1c40f;
+        }
+        .rating-note i {
+            margin-right: 8px;
+            color: #f1c40f;
+        }
+        .cancel-rating {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 40px; /* 增大按钮尺寸 */
+            height: 40px; /* 增大按钮尺寸 */
+            background-color: rgba(255, 255, 255, 0.95); /* 增加不透明度 */
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #e74c3c;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+            transition: all 0.2s;
+            z-index: 100; /* 极大提高z-index值 */
+            font-size: 20px; /* 增大图标尺寸 */
+            border: 2px solid rgba(231, 76, 60, 0.8); /* 增加边框可见性 */
+            pointer-events: auto; /* 确保可以接收点击事件 */
+        }
+        .cancel-rating:hover {
+            transform: scale(1.2);
+            background-color: #e74c3c;
+            color: white;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+            border-color: white;
+        }
+        
+        /* 修改已评分图片的样式，确保评分指示器不会遮挡取消按钮 */
+        .image-card.selected .rating-indicator {
+            background-color: rgba(0, 0, 0, 0.6); /* 半透明背景 */
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- 固定菜单 -->
+        <div class="fixed-menu">
+            <div class="menu-container">
+                <a href="#" class="logo"><i class="fas fa-camera-retro"></i>图片评分系统</a>
+                <div class="menu-items">
+                    <a class="menu-item" 
+                       :class="{ active: currentView === 'upload' }" 
+                       @click="switchView('upload')">
+                        <i class="fas fa-upload"></i>上传图片
+                    </a>
+                    <a class="menu-item" 
+                       :class="{ active: currentView === 'rating' }" 
+                       @click="switchView('rating')">
+                        <i class="fas fa-star-half-alt"></i>评分图片
+                    </a>
+                    <a class="menu-item" 
+                       href="http://127.0.0.1:5000/results">
+                        <i class="fas fa-trophy"></i>查看结果
+                    </a>
+                    <a class="menu-item" 
+                       href="http://127.0.0.1:5000/rating-history">
+                        <i class="fas fa-history"></i>评分历史
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="container">
+            <div class="header">
+                <h1>图片评分系统</h1>
+            </div>
+            
+            <!-- 上传区域 -->
+            <div v-if="currentView === 'upload'" class="section">
+                <h2 class="section-title">图片上传</h2>
+                <div class="upload-area" @click="triggerFileInput">
+                    <p v-if="!selectedFiles.length">点击选择或拖放多张图片到此处</p>
+                    <p v-else>已选择 {{ selectedFiles.length }} 张图片</p>
+                    <input type="file" ref="fileInput" @change="handleFileSelect" multiple accept="image/*">
+                </div>
+                
+                <div v-if="selectedFiles.length" class="file-list">
+                    <h3>已选择的图片:</h3>
+                    <div v-for="(file, index) in selectedFiles" :key="index" class="file-item">
+                        {{ file.name }} ({{ formatFileSize(file.size) }})
+                    </div>
+                    <div class="navigation">
+                        <button class="button" @click="uploadFiles">开始上传</button>
+                        <button class="button secondary-button" @click="resetSelection">重新选择</button>
+                    </div>
+                </div>
+                
+                <div v-if="uploadStatus" :class="['status-message', uploadStatus.type === 'success' ? 'success-message' : 'error-message']">
+                    {{ uploadStatus.message }}
+                </div>
+                
+                <div v-if="uploadedFiles.length > 0" class="navigation">
+                    <button class="button success-button" @click="startRating">开始评分</button>
+                </div>
+                
+                <!-- 已上传图片列表 -->
+                <div class="uploaded-images-section">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h3 class="subsection-title" style="margin-bottom: 0;">已上传图片列表</h3>
+                        <button 
+                            class="button" 
+                            style="background-color: #e74c3c;" 
+                            @click="confirmDeleteAllImages"
+                            :disabled="loadingUploaded || allUploadedImages.length === 0"
+                        >
+                            <i class="fas fa-trash-alt"></i> 全部删除
+                        </button>
+                    </div>
+                    <div v-if="loadingUploaded" class="loading">加载中...</div>
+                    <div v-else-if="allUploadedImages.length === 0" class="status-message">
+                        暂无已上传图片
+                    </div>
+                    <div v-else class="uploaded-images-grid">
+                        <div v-for="image in allUploadedImages" :key="image.id" class="uploaded-image-card">
+                            <div class="image-thumbnail">
+                                <img :src="image.url" :alt="image.filename">
+                            </div>
+                            <div class="image-info">
+                                <div class="image-filename">{{ truncateFilename(image.original_name) }}</div>
+                                <div class="image-meta">
+                                    <span>ID: {{ truncateId(image.id) }}</span>
+                                    <span>评分次数: {{ image.rating_count }}</span>
+                                </div>
+                            </div>
+                            <div class="image-actions">
+                                <button 
+                                    class="delete-button" 
+                                    @click="confirmDeleteImage(image)"
+                                    :disabled="image.deleting"
+                                >
+                                    <i class="fas fa-trash-alt"></i> 
+                                    {{ image.deleting ? '删除中...' : '删除' }}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 评分区域 -->
+            <div v-if="currentView === 'rating'" class="section rating-area">
+                <h2 class="section-title">图片评分</h2>
+                
+                <div v-if="loading" class="loading">
+                    正在加载图片...
+                </div>
+                
+                <div v-else-if="response && response.data && response.data.task_type === 'complete'" class="status-message success-message">
+                    <p>
+                        <i class="fas fa-check-circle"></i> 所有图片已评分完成，且没有并列情况！
+                    </p>
+                    <div class="navigation">
+                        <button class="button" @click="viewResults">查看评分结果</button>
+                        <button class="button secondary-button" @click="goToUpload">返回上传</button>
+                    </div>
+                </div>
+                
+                <div v-else-if="!loading && (currentImageSet.length === 0 || (response && response.data && (!response.data.images || response.data.images.length === 0)))" class="status-message" style="background-color: #eaf2fa; color: #2c3e50; padding: 20px; border-radius: 8px; text-align: center;">
+                    <div style="font-size: 60px; margin-bottom: 20px;">
+                        <i class="fas fa-images" style="color: #3498db;"></i>
+                    </div>
+                    <h3 style="margin-bottom: 15px; color: #34495e; font-size: 22px;">暂无可评分图片</h3>
+                    <p style="margin-bottom: 20px; font-size: 16px;">您可以上传新图片进行评分，或者查看现有评分结果。</p>
+                    <div class="navigation">
+                        <button class="button" @click="goToUpload">
+                            <i class="fas fa-upload"></i> 上传新图片
+                        </button>
+                        <button class="button" style="background-color: #2ecc71;" @click="viewResults">
+                            <i class="fas fa-trophy"></i> 查看评分结果
+                        </button>
+                    </div>
+                </div>
+                
+                <template v-else>
+                    <!-- 评分状态信息 -->
+                    <div v-if="ratingStatus" class="rating-progress">
+                        <div class="progress-box">
+                            <div class="progress-title">评分进度</div>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar" :style="{ width: getProgressPercentage() }"></div>
+                            </div>
+                            <div class="progress-text">
+                                <div><i class="fas fa-info-circle"></i> 未评分图片: <strong>{{ ratingStatus.total_images - ratingStatus.rated_images }}</strong> 张</div>
+                                <div v-if="ratingStatus.duplicate_count > 0"><i class="fas fa-random"></i> 并列图片: <strong>{{ ratingStatus.duplicate_count }}</strong> 张</div>
+                            </div>
+                        </div>
+                        
+                        <div v-if="ratingStatus.duplicate_count > 0" class="duplicate-info">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <div>
+                                <p>当前有 <strong>{{ ratingStatus.duplicate_count }}</strong> 张图片评分并列（分为 {{ ratingStatus.duplicate_groups }} 组）</p>
+                                <p>至少还需要 <span class="highlight">{{ ratingStatus.min_clicks_needed }}</span> 次评分操作完成排序</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="image-container">
+                        <div v-for="(image, index) in currentImageSet" :key="image.id" 
+                             class="image-card"
+                             :class="{ 
+                                'rating-in-progress': image.ratingInProgress, 
+                                'image-fade-out': image.ratingState !== undefined,
+                                'image-fade-in': image.fadeIn,
+                                'selected': isRated(image.id)
+                             }">
+                            <!-- 取消评分按钮，放在图片之前，确保它总是可用 -->
+                            <div v-if="isRated(image.id)" class="cancel-rating" @click.stop.prevent="cancelRating(image.id)">
+                                <i class="fas fa-times"></i>
+                            </div>
+                            
+                            <!-- 图片元素 -->
+                            <img :src="image.url" 
+                                 :alt="'图片 ' + (index + 1)" 
+                                 @click.stop="handleImageClick(image)"
+                                 :style="{ cursor: submitting ? 'not-allowed' : 'pointer' }">
+                            
+                            <!-- 图片名称 -->
+                            <div class="image-name">
+                                {{ truncateFilename(image.original_name || '未命名图片', image) }}
+                            </div>
+                            
+                            <!-- 评分指示器 -->
+                            <div class="rating-indicator" v-if="image.ratingState !== undefined">
+                                <div class="rating-icon" :class="getRatingIconClass(image.ratingState)">
+                                    {{ getRatingEmoji(image.ratingState) }}
+                                </div>
+                                <div class="rating-text">{{ getRatingText(image.ratingState) }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 评分操作区 -->
+                    <div class="rating-actions" style="margin-top: 20px; text-align: center;">
+                        <button class="button success-button" @click="submitRatings" :disabled="!hasAnyRating() || submitting">
+                            <i class="fas fa-check-circle"></i> 提交评分
+                        </button>
+                    </div>
+                    
+                    <!-- 显示当前评分任务类型 -->
+                    <div class="rating-task-info" v-if="currentImageSet.length > 0 && response && response.data && response.data.task_type">
+                        <p v-if="response.data.task_type === 'initial_rating'">
+                            <i class="fas fa-info-circle"></i> 当前正在对<strong>未评分过的图片</strong>进行评分
+                        </p>
+                        <p v-else-if="response.data.task_type === 'resolve_tie'">
+                            <i class="fas fa-exclamation-triangle"></i> 当前正在解决<strong>评分相同的图片</strong>，以确定它们的排名
+                        </p>
+                        <p v-else-if="response.data.task_type === 'build_graph'">
+                            <i class="fas fa-project-diagram"></i> 正在<strong>智能构建排序关系图</strong>，系统会自动选择最需要评分的图片
+                        </p>
+                    </div>
+                    
+                    <!-- 评分指示 -->
+                    <div class="task-instruction">
+                        <div class="task-prompt">
+                            <i class="fas fa-info-circle"></i>
+                            <span>{{ taskPrompt }}</span>
+                        </div>
+                        <div class="instruction-text">
+                            <div class="rating-instruction-item">
+                                <i class="fas fa-hand-point-up"></i> 
+                                <span>第一次点击</span>
+                                <span class="rating-equals">=</span>
+                                <span class="rating-value positive"><i class="fas fa-thumbs-up"></i> 喜欢</span>
+                            </div>
+                            <div class="rating-instruction-item">
+                                <i class="fas fa-hand-point-up"></i> 
+                                <span>第二次点击</span>
+                                <span class="rating-equals">=</span>
+                                <span class="rating-value neutral"><i class="fas fa-meh"></i> 一般</span>
+                            </div>
+                            <div class="rating-instruction-item">
+                                <i class="fas fa-hand-point-up"></i> 
+                                <span>第三次点击</span>
+                                <span class="rating-equals">=</span>
+                                <span class="rating-value negative"><i class="fas fa-thumbs-down"></i> 不喜欢</span>
+                            </div>
+                            <div class="rating-instruction-item">
+                                <i class="fas fa-hand-point-up"></i> 
+                                <span>再次点击已评分图片</span>
+                                <span class="rating-equals">=</span>
+                                <span class="rating-value" style="background-color: #e8f4f8; color: #3498db;"><i class="fas fa-times"></i> 取消评分</span>
+                            </div>
+                        </div>
+                        
+                        <div class="rating-note">
+                            <i class="fas fa-lightbulb"></i>
+                            <span>评分后图片会变淡并保持在屏幕上，您可以点击图片或右上角的"×"按钮取消评分</span>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        new Vue({
+            el: '#app',
+            data: {
+                currentView: 'upload',  // 'upload' or 'rating'
+                selectedFiles: [],
+                uploadedFiles: [],
+                uploadStatus: null,
+                currentImageSet: [],
+                ratings: {},
+                loading: false,
+                submitting: false,
+                ratingStatus: null,
+                loadingUploaded: false,
+                allUploadedImages: [],
+                response: null,
+                currentTaskType: null,
+                taskPrompt: '',
+            },
+            mounted() {
+                // 检查URL参数，判断是否直接进入评分页面
+                const urlParams = new URLSearchParams(window.location.search);
+                const view = urlParams.get('view');
+                if (view === 'rating') {
+                    this.startRating();
+                } else {
+                    // 加载已上传图片列表
+                    this.loadUploadedImages();
+                }
+            },
+            methods: {
+                // 切换视图
+                switchView(view) {
+                    if (view === 'rating' && this.currentView !== 'rating') {
+                        this.startRating();
+                    } else {
+                        this.currentView = view;
+                    }
+                },
+                
+                // 触发文件选择框
+                triggerFileInput() {
+                    this.$refs.fileInput.click();
+                },
+                
+                // 处理文件选择
+                handleFileSelect(event) {
+                    const files = event.target.files;
+                    if (files) {
+                        this.selectedFiles = Array.from(files);
+                    }
+                },
+                
+                // 格式化文件大小
+                formatFileSize(size) {
+                    if (size < 1024) return size + ' B';
+                    else if (size < 1024 * 1024) return (size / 1024).toFixed(2) + ' KB';
+                    else return (size / (1024 * 1024)).toFixed(2) + ' MB';
+                },
+                
+                // 重置文件选择
+                resetSelection() {
+                    this.selectedFiles = [];
+                    this.$refs.fileInput.value = null;
+                },
+                
+                // 上传文件
+                uploadFiles() {
+                    if (this.selectedFiles.length === 0) {
+                        this.uploadStatus = {
+                            type: 'error',
+                            message: '请选择要上传的图片'
+                        };
+                        return;
+                    }
+                    
+                    const formData = new FormData();
+                    this.selectedFiles.forEach(file => {
+                        formData.append('images', file);
+                    });
+                    
+                    this.uploadStatus = {
+                        type: 'success',
+                        message: '正在上传...'
+                    };
+                    
+                    axios.post('http://127.0.0.1:5000/upload', formData)
+                        .then(response => {
+                            if (response.data.success) {
+                                this.uploadedFiles = response.data.files;
+                                this.uploadStatus = {
+                                    type: 'success',
+                                    message: `成功上传 ${this.uploadedFiles.length} 张图片`
+                                };
+                                this.resetSelection();
+                                // 上传成功后刷新列表
+                                this.loadUploadedImages();
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Upload error:', error);
+                            this.uploadStatus = {
+                                type: 'error',
+                                message: '上传失败: ' + (error.response?.data?.error || error.message)
+                            };
+                        });
+                },
+                
+                // 开始评分流程
+                startRating() {
+                    this.currentView = 'rating';
+                    this.loadImageSet();
+                },
+                
+                // 加载图片集合
+                loadImageSet() {
+                    this.loading = true;
+                    
+                    // 先完全清空现有图片集
+                    this.currentImageSet = [];
+                    this.ratings = {};
+                    
+                    // 稍微延迟，确保DOM已更新
+                    setTimeout(() => {
+                        // 请求获取需要评分的图片
+                        axios.get('http://127.0.0.1:5000/get_images_to_rate')
+                            .then(response => {
+                                console.log("获取到的响应:", response.data);
+                                
+                                // 保存完整响应
+                                this.response = response;
+                                
+                                // 获取任务类型
+                                const taskType = response.data.task_type;
+                                this.currentTaskType = taskType;
+                                // 根据任务类型设置提示文本
+                                if (taskType === 'initial_rating') {
+                                    this.taskPrompt = '请对以下图片进行评分，点击图片表示喜欢程度。';
+                                } else if (taskType === 'resolve_tie') {
+                                    this.taskPrompt = '这些图片目前得分并列，请再次评分以解决并列。';
+                                } else if (taskType === 'build_graph') {
+                                    this.taskPrompt = '请对以下图片进行评分，帮助系统建立排序关系。';
+                                } else if (taskType === 'complete') {
+                                    this.taskPrompt = '所有图片已完成评分，没有并列情况。';
+                                    // 如果已完成所有评分，跳转到结果页面
+                                    window.location.href = '/results';
+                                    this.loading = false;
+                                    return;
+                                }
+                                
+                                // 检查是否有图片需要评分
+                                if (!response.data.images || response.data.images.length === 0) {
+                                    this.loading = false;
+                                    return;
+                                }
+                                
+                                // 设置加载的图片，并添加淡入效果
+                                setTimeout(() => {
+                                    this.currentImageSet = response.data.images.map(img => {
+                                        return {
+                                            ...img,
+                                            fadeIn: true,
+                                            rated: false,
+                                            ratingState: undefined,
+                                            ratingInProgress: false,
+                                            original_name: img.original_name
+                                        };
+                                    });
+                                    
+                                    // 延迟移除淡入效果类名
+                                    setTimeout(() => {
+                                        this.currentImageSet.forEach(img => {
+                                            this.$set(img, 'fadeIn', false);
+                                        });
+                                    }, 500);
+                                    
+                                    this.loading = false;
+                                    
+                                    // 加载评分状态信息
+                                    this.loadRatingStatus();
+                                }, 300); // 延迟一小段时间让用户感知到新图片的加载
+                            })
+                            .catch(error => {
+                                console.error('Error loading images:', error);
+                                this.loading = false;
+                                alert('加载图片失败: ' + (error.response?.data?.error || error.message));
+                            });
+                    }, 100);
+                },
+                
+                // 加载评分状态信息
+                loadRatingStatus() {
+                    axios.get('http://127.0.0.1:5000/rating_status')
+                        .then(response => {
+                            this.ratingStatus = response.data;
+                        })
+                        .catch(error => {
+                            console.error('Error loading rating status:', error);
+                        });
+                },
+                
+                // 对图片评分
+                rateImage(imageId, score) {
+                    console.log('评分图片ID:', imageId, '分数:', score);
+                    this.ratings[imageId] = score;
+                    // 强制更新视图
+                    this.$forceUpdate();
+                },
+                
+                // 获取图片评分
+                getRating(imageId) {
+                    // return this.ratings[imageId];
+                    return Object.keys(this.ratings).length;
+                },
+                
+                // 检查图片是否已评分
+                isRated(imageId) {
+                    return this.ratings[imageId] !== undefined;
+                },
+                
+                // 检查是否所有图片都已评分
+                isAllRated() {
+                    return this.currentImageSet.every(image => this.isRated(image.id));
+                },
+                
+                // 检查是否有任何一张图片已评分
+                hasAnyRating() {
+                    return Object.keys(this.ratings).length > 0;
+                },
+                
+                // 提交评分
+                submitRatings() {
+                    if (!this.hasAnyRating()) {
+                        alert('请对至少一张图片进行评分');
+                        return;
+                    }
+                    
+                    this.submitting = true;
+                    
+                    const ratingsArray = Object.keys(this.ratings).map(id => ({
+                        id: id,
+                        score: this.ratings[id]
+                    }));
+                    
+                    axios.post('http://127.0.0.1:5000/rate', { ratings: ratingsArray })
+                        .then(response => {
+                            if (response.data.success) {
+                                // 加载下一组图片
+                                this.loadImageSet();
+                                // 更新评分状态
+                                this.loadRatingStatus();
+                            }
+                            this.submitting = false;
+                        })
+                        .catch(error => {
+                            console.error('Error submitting ratings:', error);
+                            alert('提交评分失败');
+                            this.submitting = false;
+                        });
+                },
+                
+                // 查看结果
+                viewResults() {
+                    window.location.href = 'http://127.0.0.1:5000/results';
+                },
+                
+                // 返回上传页面
+                goToUpload() {
+                    this.currentView = 'upload';
+                },
+                
+                // 获取评分文本
+                getRatingText(score) {
+                    switch (score) {
+                        case 1:
+                            return '喜欢';
+                        case 0:
+                            return '一般';
+                        case -1:
+                            return '不喜欢';
+                        default:
+                            return '未评分';
+                    }
+                },
+                
+                // 获取进度百分比
+                getProgressPercentage() {
+                    if (!this.ratingStatus || this.ratingStatus.total_images === 0) return '0%';
+                    
+                    // 计算进度：已评分的图片数量减去并列的图片数量
+                    const ratedNonDuplicate = this.ratingStatus.rated_images - this.ratingStatus.duplicate_count;
+                    const total = this.ratingStatus.total_images;
+                    
+                    // 如果没有并列图片，直接返回已评分图片的百分比
+                    if (this.ratingStatus.duplicate_count === 0) {
+                        return ((this.ratingStatus.rated_images / total) * 100).toFixed(1) + '%';
+                    }
+                    
+                    // 考虑并列图片的情况：将进度看作是(已评分非并列图片/总图片)*100%
+                    let percentage = (ratedNonDuplicate / total) * 100;
+                    // 确保百分比在0-100之间
+                    percentage = Math.max(0, Math.min(100, percentage));
+                    return percentage.toFixed(1) + '%';
+                },
+                
+                // 加载已上传图片列表
+                loadUploadedImages() {
+                    this.loadingUploaded = true;
+                    axios.get('http://127.0.0.1:5000/uploaded_images')
+                        .then(response => {
+                            this.allUploadedImages = response.data.images;
+                            this.loadingUploaded = false;
+                        })
+                        .catch(error => {
+                            console.error('Error loading uploaded images:', error);
+                            this.loadingUploaded = false;
+                        });
+                },
+                
+                // 截断文件名
+                truncateFilename(filename, image=null) {
+                    const maxLength = 20;
+                    if (filename.length > maxLength) {
+                        return filename.slice(0, maxLength) + '...';
+                    }
+                    return filename;
+                },
+                
+                // 截断ID
+                truncateId(id) {
+                    const maxLength = 10;
+                    if (id.length > maxLength) {
+                        return id.slice(0, maxLength) + '...';
+                    }
+                    return id;
+                },
+                
+                // 确认删除图片
+                confirmDeleteImage(image) {
+                    if (confirm('确定要删除这张图片吗？')) {
+                        this.deleteImage(image);
+                    }
+                },
+                
+                // 删除图片
+                deleteImage(image) {
+                    // 设置正在删除状态
+                    this.$set(image, 'deleting', true);
+                    
+                    axios.delete(`http://127.0.0.1:5000/delete_image/${image.id}`)
+                        .then(response => {
+                            if (response.data.success) {
+                                // 从列表中移除图片
+                                this.allUploadedImages = this.allUploadedImages.filter(img => img.id !== image.id);
+                            } else {
+                                alert('删除失败');
+                            }
+                            // 取消正在删除状态
+                            this.$set(image, 'deleting', false);
+                        })
+                        .catch(error => {
+                            console.error('Error deleting image:', error);
+                            alert('删除失败');
+                            // 取消正在删除状态
+                            this.$set(image, 'deleting', false);
+                        });
+                },
+                
+                // 确认删除所有图片
+                confirmDeleteAllImages() {
+                    if (confirm('确定要删除所有图片吗？此操作不可恢复！')) {
+                        this.deleteAllImages();
+                    }
+                },
+                
+                // 删除所有图片
+                deleteAllImages() {
+                    this.loadingUploaded = true;
+                    
+                    axios.delete('http://127.0.0.1:5000/delete_all_images')
+                        .then(response => {
+                            if (response.data.success) {
+                                this.allUploadedImages = [];
+                                this.loadingUploaded = false;
+                                alert('所有图片已成功删除');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error deleting all images:', error);
+                            this.loadingUploaded = false;
+                            alert('删除所有图片失败: ' + (error.response?.data?.error || error.message));
+                        });
+                },
+                
+                // 处理图片点击
+                handleImageClick(image) {
+                    if (this.submitting) return;
+                    
+                    // 如果图片已经评分，则取消评分
+                    if (this.isRated(image.id)) {
+                        this.cancelRating(image.id);
+                        return;
+                    }
+                    
+                    // 设置正在评分状态
+                    this.$set(image, 'ratingInProgress', true);
+                    
+                    // 根据点击次数循环评分状态：1(喜欢) -> 0(一般) -> -1(不喜欢)
+                    let status_list = [1, 0, -1];
+                    let currentRating = 0;
+                    let selected_status = []
+                    let newRating;
+                    for (let i = 0; i < this.currentImageSet.length; i++) {
+                        if (this.currentImageSet[i].ratingState !== undefined) {
+                            selected_status.push(this.currentImageSet[i].ratingState);
+                        }
+                    }
+                    if (this.currentImageSet.length > 0) {
+                        // status_list - selected_status
+                        status_list = status_list.filter(status => !selected_status.includes(status));
+                        newRating = status_list[0];
+                    } else {
+                        currentRating = this.getRating(image.id);
+                        if (currentRating === 0) {
+                            newRating = 1; // 第一次点击 -> 喜欢
+                        } else if (currentRating === 1) {
+                            newRating = 0; // 第二次点击 -> 一般
+                        } else if (currentRating === 2) {
+                            newRating = -1; // 第三次点击 -> 不喜欢
+                        } else {
+                            newRating = 1; // 再次循环回到喜欢
+                        }
+                    }
+                    
+                    // 更新评分
+                    this.rateImage(image.id, newRating);
+                    
+                    // 更新图片状态
+                    this.$set(image, 'ratingState', newRating);
+                    this.$set(image, 'rated', true);
+                    
+                    // 500ms后移除正在评分状态
+                    setTimeout(() => {
+                        this.$set(image, 'ratingInProgress', false);
+                    }, 500);
+                    
+                    console.log('图片评分完成，评分为:', newRating);
+                },
+                
+                // 获取评分图标样式
+                getRatingIconClass(score) {
+                    switch (score) {
+                        case 1:
+                            return 'like-icon';
+                        case 0:
+                            return 'neutral-icon';
+                        case -1:
+                            return 'dislike-icon';
+                        default:
+                            return '';
+                    }
+                },
+                
+                // 获取评分表情
+                getRatingEmoji(score) {
+                    switch (score) {
+                        case 1:
+                            return '👍';
+                        case 0:
+                            return '😐';
+                        case -1:
+                            return '👎';
+                        default:
+                            return '';
+                    }
+                },
+                
+                // 取消评分
+                cancelRating(imageId) {
+                    console.log('开始取消评分，图片ID:', imageId);
+                    
+                    // 阻止事件传播
+                    event.stopPropagation();
+                    
+                    try {
+                        // 从评分对象中删除该图片的评分
+                        if (this.ratings[imageId] !== undefined) {
+                            console.log('删除前的评分:', this.ratings[imageId]);
+                            
+                            // 使用Vue的响应式方法删除属性
+                            this.$delete(this.ratings, imageId);
+                            
+                            console.log('删除后的评分状态:', this.ratings[imageId]);
+                            
+                            // 找到要取消评分的图片
+                            const image = this.currentImageSet.find(img => img.id === imageId);
+                            if (image) {
+                                console.log('找到图片对象:', image.id);
+                                // 重置图片状态
+                                this.$set(image, 'ratingState', undefined);
+                                this.$set(image, 'ratingInProgress', false);
+                                this.$set(image, 'rated', false);
+                                console.log('重置图片状态完成');
+                            } else {
+                                console.error('未找到图片对象:', imageId);
+                            }
+                            
+                            // 强制更新视图
+                            this.$forceUpdate();
+                            console.log('取消评分成功，当前评分数:', Object.keys(this.ratings).length);
+                            
+                            // 增加一个短暂延迟，让用户看到取消效果
+                            setTimeout(() => {
+                                // 只是一个视觉反馈
+                            }, 100);
+                        } else {
+                            console.log('图片未评分，无需取消');
+                        }
+                    } catch (error) {
+                        console.error('取消评分时发生错误:', error);
+                        alert('取消评分失败：' + error.message);
+                    }
+                    
+                    // 阻止事件默认行为
+                    return false;
+                },
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图片评分结果 - 图片评分系统</title>
+    <!-- 引入Vue.js -->
+    <script src="static/js/vue.min.js"></script>
+    <!-- 引入Axios -->
+    <script src="static/js/axios.min.js"></script>
+    <!-- 引入Font Awesome图标 -->
+    <link rel="stylesheet" href="static/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f7f9fc;
+            color: #333;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            padding-top: 80px; /* 为固定菜单腾出空间 */
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px 0;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        h1 {
+            color: #2c3e50;
+            margin: 0;
+            font-weight: 500;
+        }
+        .section {
+            background-color: #fff;
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        .section-title {
+            color: #2c3e50;
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-weight: 500;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        .button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+            transition: background-color 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .button:hover {
+            background-color: #2980b9;
+        }
+        .navigation {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 18px;
+            color: #7f8c8d;
+        }
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+        .image-card {
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+            background-color: white;
+            transition: transform 0.3s, box-shadow 0.3s;
+            position: relative;
+        }
+        .image-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+        }
+        .image-card.duplicate {
+            border: 2px solid #e74c3c;
+        }
+        .image-card:hover .image-container img {
+            transform: scale(1.05);
+        }
+        .image-container {
+            height: 200px;
+            overflow: hidden;
+        }
+        .image-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s;
+        }
+        .image-info {
+            padding: 15px;
+        }
+        .image-rank {
+            display: inline-block;
+            background-color: #3498db;
+            color: white;
+            font-weight: bold;
+            padding: 5px 10px;
+            border-radius: 20px;
+            margin-bottom: 10px;
+        }
+        .image-stats {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            color: #7f8c8d;
+            margin-top: 10px;
+        }
+        .rating-bar {
+            height: 8px;
+            background-color: #ecf0f1;
+            border-radius: 4px;
+            margin-top: 5px;
+            overflow: hidden;
+        }
+        .rating-value {
+            height: 100%;
+            background-color: #3498db;
+            border-radius: 4px;
+        }
+        .positive {
+            background-color: #2ecc71;
+        }
+        .neutral {
+            background-color: #f1c40f;
+        }
+        .negative {
+            background-color: #e74c3c;
+        }
+        .no-results {
+            text-align: center;
+            padding: 40px 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            margin: 30px 0;
+        }
+        .no-results h3 {
+            color: #7f8c8d;
+            margin-bottom: 20px;
+        }
+        /* 锦标赛统计信息展示样式 */
+        .tournament-stats {
+            margin-top: 15px;
+            padding: 12px;
+            background-color: #f7f9fc;
+            border-radius: 6px;
+            border: 1px solid #eaecef;
+        }
+        .stats-title {
+            font-weight: 500;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+        .stats-title i {
+            margin-right: 5px;
+            transition: transform 0.3s;
+        }
+        .stats-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            font-size: 13px;
+        }
+        .stats-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px dashed #ecf0f1;
+        }
+        .stats-label {
+            color: #7f8c8d;
+        }
+        .stats-value {
+            font-weight: 500;
+            color: #34495e;
+        }
+        .score-tag {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin-left: 8px;
+            color: white;
+            font-weight: 500;
+        }
+        .score-positive {
+            background-color: #2ecc71;
+        }
+        .score-neutral {
+            background-color: #3498db;
+        }
+        .score-negative {
+            background-color: #e74c3c;
+        }
+        /* 固定菜单样式 */
+        .fixed-menu {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background-color: #34495e;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+        .menu-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+        }
+        .logo {
+            color: white;
+            font-size: 22px;
+            font-weight: 500;
+            padding: 15px 0;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            transition: transform 0.3s;
+        }
+        .logo:hover {
+            transform: scale(1.05);
+        }
+        .logo i {
+            margin-right: 10px;
+            font-size: 26px;
+            color: #3498db;
+        }
+        .menu-items {
+            display: flex;
+        }
+        .menu-item {
+            color: white;
+            text-decoration: none;
+            padding: 18px 20px;
+            font-weight: 500;
+            transition: all 0.3s;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .menu-item:before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background-color: #3498db;
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+        }
+        .menu-item:hover:before, 
+        .menu-item.active:before {
+            transform: translateX(0);
+        }
+        .menu-item i {
+            margin-right: 8px;
+            font-size: 18px;
+            transition: transform 0.3s;
+        }
+        .menu-item:hover i, 
+        .menu-item.active i {
+            transform: scale(1.2);
+            color: #3498db;
+        }
+        .menu-item:hover, .menu-item.active {
+            background-color: #2c3e50;
+        }
+        .duplicate-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: #e74c3c;
+            color: white;
+            padding: 5px 8px;
+            border-radius: 50%;
+            font-size: 12px;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            z-index: 10;
+        }
+        .warning-message {
+            padding: 10px 15px;
+            background-color: #fef8e8;
+            border-left: 4px solid #f1c40f;
+            margin-bottom: 20px;
+            color: #8a6d3b;
+        }
+        /* 响应式调整 */
+        @media (max-width: 768px) {
+            .image-grid {
+                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            }
+            .menu-container {
+                flex-direction: column;
+                padding: 10px;
+            }
+            .menu-items {
+                width: 100%;
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+            .menu-item {
+                padding: 12px 15px;
+                font-size: 14px;
+                justify-content: center;
+                text-align: center;
+                flex: 1;
+                min-width: 100px;
+            }
+            .menu-item i {
+                margin-right: 5px;
+            }
+            .logo {
+                margin-bottom: 5px;
+                font-size: 18px;
+            }
+            .logo i {
+                font-size: 22px;
+            }
+        }
+        @media (max-width: 480px) {
+            .image-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- 固定菜单 -->
+        <div class="fixed-menu">
+            <div class="menu-container">
+                <a href="#" class="logo"><i class="fas fa-camera-retro"></i>图片评分系统</a>
+                <div class="menu-items">
+                    <a class="menu-item" href="http://127.0.0.1:5000/">
+                        <i class="fas fa-upload"></i>上传图片
+                    </a>
+                    <a class="menu-item" href="http://127.0.0.1:5000/?view=rating">
+                        <i class="fas fa-star-half-alt"></i>评分图片
+                    </a>
+                    <a class="menu-item active" href="http://127.0.0.1:5000/results">
+                        <i class="fas fa-trophy"></i>查看结果
+                    </a>
+                    <a class="menu-item" href="http://127.0.0.1:5000/rating-history">
+                        <i class="fas fa-history"></i>评分历史
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="container">
+            <div class="header">
+                <h1>图片评分结果</h1>
+            </div>
+            
+            <div class="section">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <h2 class="section-title">图片排名</h2>
+                    <button class="button" style="padding: 6px 12px;" @click="refreshRankedImages">
+                        <i class="fas fa-sync-alt"></i> 刷新结果
+                    </button>
+                </div>
+                
+                <div v-if="loading" class="loading">
+                    <div>加载中，请稍候...</div>
+                </div>
+                
+                <div v-else-if="images.length === 0" class="no-results">
+                    <h3>暂无评分数据</h3>
+                    <p>还没有图片被评分，请先上传并评分图片。</p>
+                    <div class="navigation">
+                        <a href="http://127.0.0.1:5000/" class="button">返回上传页面</a>
+                    </div>
+                </div>
+                
+                <div v-else>
+                    <div v-if="countDuplicateRatings() > 0" class="warning-message">
+                        <i class="fas fa-exclamation-triangle"></i> 
+                        检测到有 {{ countDuplicateRatings() }} 张图片具有相同的评分结果 (红色边框标识)。
+                        建议您继续评分这些图片，以获得更准确的排名结果。
+                    </div>
+
+                    <div class="image-grid">
+                        <div v-for="(image, index) in images" :key="image.id" 
+                             :class="['image-card', hasDuplicateRating(image) ? 'duplicate' : '']">
+                            <div class="image-container">
+                                <img :src="image.url" :alt="'排名 #' + (index + 1)">
+                            </div>
+                            <div class="image-info">
+                                <div class="image-rank">排名 #{{ index + 1 }}</div>
+                                <div>
+                                    <div class="rating-bar">
+                                        <div class="rating-value" 
+                                             :class="getRatingClass(image.avg_rating)"
+                                             :style="{ width: getRatingPercentage(image.avg_rating) }"></div>
+                                    </div>
+                                </div>
+                                <div class="image-stats">
+                                    <div>平均分: {{ formatRating(image.avg_rating) }}</div>
+                                    <div>评分次数: {{ image.rating_count }}</div>
+                                </div>
+                                <div class="tournament-stats">
+                                    <div class="stats-title" @click="toggleStats(image.id)">
+                                        <i class="fas" :class="isStatsOpen(image.id) ? 'fa-chevron-down' : 'fa-chevron-right'"></i>
+                                        锦标赛统计
+                                        <span 
+                                            :class="['score-tag', getTournamentScoreClass(image.tournament_stats.tournament_score)]"
+                                            v-if="image.tournament_stats">
+                                            {{ image.tournament_stats.tournament_score }}
+                                        </span>
+                                    </div>
+                                    <div class="stats-content" v-if="isStatsOpen(image.id) && image.tournament_stats">
+                                        <div class="stats-item">
+                                            <span class="stats-label">锦标赛得分:</span>
+                                            <span class="stats-value">{{ image.tournament_stats.tournament_score }}</span>
+                                        </div>
+                                        <div class="stats-item">
+                                            <span class="stats-label">胜率:</span>
+                                            <span class="stats-value">{{ formatPercentage(image.tournament_stats.win_rate) }}</span>
+                                        </div>
+                                        <div class="stats-item">
+                                            <span class="stats-label">胜出次数:</span>
+                                            <span class="stats-value">{{ image.tournament_stats.wins }}</span>
+                                        </div>
+                                        <div class="stats-item">
+                                            <span class="stats-label">比较总次数:</span>
+                                            <span class="stats-value">{{ image.tournament_stats.comparison_count }}</span>
+                                        </div>
+                                        <div class="stats-item">
+                                            <span class="stats-label">胜出图片数:</span>
+                                            <span class="stats-value">{{ image.tournament_stats.out_degree }}</span>
+                                        </div>
+                                        <div class="stats-item">
+                                            <span class="stats-label">被胜出数:</span>
+                                            <span class="stats-value">{{ image.tournament_stats.in_degree }}</span>
+                                        </div>
+                                        <div class="stats-item">
+                                            <span class="stats-label">相对强度:</span>
+                                            <span class="stats-value">{{ formatPercentage(image.tournament_stats.relative_strength) }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="image-actions" style="margin-top: 10px;">
+                                    <a :href="'http://127.0.0.1:5000/rating-history?image_id=' + image.id" 
+                                       style="font-size: 14px; color: #3498db; text-decoration: none;">
+                                        <i class="fas fa-history"></i> 查看评分历史
+                                    </a>
+                                </div>
+                            </div>
+                            <div v-if="hasDuplicateRating(image)" class="duplicate-badge">并列</div>
+                        </div>
+                    </div>
+                    
+                    <div class="navigation" v-if="countDuplicateRatings() > 0">
+                        <button class="button" @click="goToRatingPage">继续评分解决并列</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        new Vue({
+            el: '#app',
+            data: {
+                images: [],
+                loading: true,
+                openStatsIds: new Set(),
+                clearRelationValue: 0
+            },
+            mounted() {
+                this.loadRankedImages();
+            },
+            methods: {
+                // 加载排序后的图片
+                loadRankedImages(refresh = false) {
+                    this.loading = true;
+                    
+                    // 添加refresh参数以强制刷新排序结果
+                    let url = 'http://127.0.0.1:5000/ranked_images';
+                    if (refresh) {
+                        url += '?refresh=1';
+                    }
+                    
+                    axios.get(url)
+                        .then(response => {
+                            this.images = response.data.images;
+                            this.loading = false;
+                            
+                            // 分析重复评分的数量
+                            const duplicateCount = this.countDuplicateRatings();
+                            
+                            // 检查是否有评分并列的情况
+                            this.clearRelationValue = response.data.sorting_progress.clear_relation_value;
+                            if (response.data.has_duplicate_ratings && this.clearRelationValue < 0.9) {
+                                this.showDuplicateRatingAlert(response.data.duplicate_count);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error loading ranked images:', error);
+                            this.loading = false;
+                        });
+                },
+                
+                // 计算具有重复评分的图片数量
+                countDuplicateRatings() {
+                    return this.images.filter(img => img.has_duplicate).length;
+                },
+                
+                // 检查图片是否有并列评分
+                hasDuplicateRating(image) {
+                    if (this.clearRelationValue < 0.9) {
+                        return image.has_duplicate;
+                    }
+                    return false;
+                },
+                
+                // 显示存在并列评分的提示
+                showDuplicateRatingAlert(duplicateCount) {
+                    const confirmResult = confirm(`检测到有 ${duplicateCount} 张图片具有并列评分结果，为了获得更准确的排名，建议继续进行评分。是否前往评分页面？`);
+                    if (confirmResult) {
+                        window.location.href = 'http://127.0.0.1:5000/?view=rating';
+                    }
+                },
+                
+                // 格式化评分，保留2位小数
+                formatRating(rating) {
+                    return parseFloat(rating).toFixed(2);
+                },
+                
+                // 获取评分的百分比宽度
+                getRatingPercentage(rating) {
+                    // 将评分从 -1 到 1 的范围转换为 0% 到 100% 的范围
+                    const percentage = ((parseFloat(rating) + 1) / 2) * 100;
+                    return Math.min(Math.max(percentage, 0), 100) + '%';
+                },
+                
+                // 获取评分的颜色类名
+                getRatingClass(rating) {
+                    rating = parseFloat(rating);
+                    if (rating > 0.3) return 'positive';
+                    if (rating < -0.3) return 'negative';
+                    return 'neutral';
+                },
+                
+                // 跳转到评分页面
+                goToRatingPage() {
+                    window.location.href = 'http://127.0.0.1:5000/?view=rating';
+                },
+                
+                // 切换统计信息的显示状态
+                toggleStats(imageId) {
+                    if (this.openStatsIds.has(imageId)) {
+                        this.openStatsIds.delete(imageId);
+                    } else {
+                        this.openStatsIds.add(imageId);
+                    }
+                },
+                
+                // 检查统计信息是否打开
+                isStatsOpen(imageId) {
+                    return this.openStatsIds.has(imageId);
+                },
+                
+                // 格式化百分比
+                formatPercentage(value) {
+                    return (value * 100).toFixed(1) + '%';
+                },
+                
+                // 获取锦标赛得分的样式类
+                getTournamentScoreClass(score) {
+                    if (score > 0) return 'score-positive';
+                    if (score < 0) return 'score-negative';
+                    return 'score-neutral';
+                },
+                
+                // 刷新结果
+                refreshRankedImages() {
+                    this.loadRankedImages(true);
+                }
+            }
+        });
+    </script>
+</body>
+</html> 

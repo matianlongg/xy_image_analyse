@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>评分历史记录 - 图片评分系统</title>
+    <!-- 引入Vue.js -->
+    <script src="static/js/vue.min.js"></script>
+    <!-- 引入Axios -->
+    <script src="static/js/axios.min.js"></script>
+    <!-- 引入Font Awesome图标 -->
+    <link rel="stylesheet" href="static/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f7f9fc;
+            color: #333;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            padding-top: 80px; /* 为固定菜单腾出空间 */
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px 0;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        h1 {
+            color: #2c3e50;
+            margin: 0;
+            font-weight: 500;
+        }
+        .section {
+            background-color: #fff;
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        .section-title {
+            color: #2c3e50;
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-weight: 500;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        .button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+            transition: background-color 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .button:hover {
+            background-color: #2980b9;
+        }
+        .navigation {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 18px;
+            color: #7f8c8d;
+        }
+        
+        /* 固定菜单样式 */
+        .fixed-menu {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background-color: #34495e;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+        .menu-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+        }
+        .logo {
+            color: white;
+            font-size: 22px;
+            font-weight: 500;
+            padding: 15px 0;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            transition: transform 0.3s;
+        }
+        .logo:hover {
+            transform: scale(1.05);
+        }
+        .logo i {
+            margin-right: 10px;
+            font-size: 26px;
+            color: #3498db;
+        }
+        .menu-items {
+            display: flex;
+        }
+        .menu-item {
+            color: white;
+            text-decoration: none;
+            padding: 18px 20px;
+            font-weight: 500;
+            transition: all 0.3s;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .menu-item:before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background-color: #3498db;
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+        }
+        .menu-item:hover:before, 
+        .menu-item.active:before {
+            transform: translateX(0);
+        }
+        .menu-item i {
+            margin-right: 8px;
+            font-size: 18px;
+            transition: transform 0.3s;
+        }
+        .menu-item:hover i, 
+        .menu-item.active i {
+            transform: scale(1.2);
+            color: #3498db;
+        }
+        .menu-item:hover, .menu-item.active {
+            background-color: #2c3e50;
+        }
+        
+        /* 记录表样式 */
+        .records-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .records-table th, 
+        .records-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .records-table th {
+            background-color: #f8f9fa;
+            font-weight: 500;
+            color: #2c3e50;
+        }
+        .records-table tr:hover {
+            background-color: #f5f5f5;
+        }
+        .records-table tr:last-child td {
+            border-bottom: none;
+        }
+        .thumbnail {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .score-badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            color: white;
+        }
+        .score-like {
+            background-color: #2ecc71;
+        }
+        .score-neutral {
+            background-color: #f1c40f;
+        }
+        .score-dislike {
+            background-color: #e74c3c;
+        }
+        .no-records {
+            text-align: center;
+            padding: 50px 20px;
+            color: #7f8c8d;
+        }
+        .filters {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        .filter-input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        
+        /* 响应式调整 */
+        @media (max-width: 768px) {
+            .menu-container {
+                flex-direction: column;
+                padding: 10px;
+            }
+            .menu-items {
+                width: 100%;
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+            .menu-item {
+                padding: 12px 15px;
+                font-size: 14px;
+                justify-content: center;
+                text-align: center;
+                flex: 1;
+                min-width: 100px;
+            }
+            .records-table thead {
+                display: none;
+            }
+            .records-table td {
+                display: flex;
+                padding: 8px 5px;
+                text-align: right;
+                border-bottom: 0;
+            }
+            .records-table td:before {
+                content: attr(data-label);
+                font-weight: bold;
+                width: 120px;
+                min-width: 120px;
+                text-align: left;
+            }
+            .records-table tr {
+                margin-bottom: 15px;
+                display: block;
+                border: 1px solid #ddd;
+                border-radius: 4px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- 固定菜单 -->
+        <div class="fixed-menu">
+            <div class="menu-container">
+                <a href="#" class="logo"><i class="fas fa-camera-retro"></i>图片评分系统</a>
+                <div class="menu-items">
+                    <a class="menu-item" href="http://127.0.0.1:5000/">
+                        <i class="fas fa-upload"></i>上传图片
+                    </a>
+                    <a class="menu-item" href="http://127.0.0.1:5000/?view=rating">
+                        <i class="fas fa-star-half-alt"></i>评分图片
+                    </a>
+                    <a class="menu-item" href="http://127.0.0.1:5000/results">
+                        <i class="fas fa-trophy"></i>查看结果
+                    </a>
+                    <a class="menu-item active" href="http://127.0.0.1:5000/rating-history">
+                        <i class="fas fa-history"></i>评分历史
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="container">
+            <div class="header">
+                <h1>评分历史记录</h1>
+            </div>
+            
+            <div class="section">
+                <h2 class="section-title">评分记录列表</h2>
+                
+                <div v-if="loading" class="loading">
+                    <div>加载中，请稍候...</div>
+                </div>
+                
+                <div v-else-if="records.length === 0" class="no-records">
+                    <h3>暂无评分记录</h3>
+                    <p>您还没有对任何图片进行评分。</p>
+                    <div class="navigation">
+                        <a href="http://127.0.0.1:5000/?view=rating" class="button">去评分图片</a>
+                    </div>
+                </div>
+                
+                <div v-else>
+                    <div class="filters">
+                        <input type="text" v-model="searchQuery" @input="filterRecords" 
+                               placeholder="搜索评分记录..." class="filter-input">
+                    </div>
+                    
+                    <table class="records-table">
+                        <thead>
+                            <tr>
+                                <th width="80">图片</th>
+                                <th>图片ID</th>
+                                <th>评分</th>
+                                <th>评分时间</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="record in filteredRecords" :key="record.id">
+                                <td data-label="图片">
+                                    <img :src="'http://127.0.0.1:5000/static/uploads/' + record.filename" 
+                                         class="thumbnail" :alt="record.filename">
+                                </td>
+                                <td data-label="图片ID">{{ record.image_id.substring(0, 8) }}...</td>
+                                <td data-label="评分">
+                                    <span :class="['score-badge', getScoreBadgeClass(record.score)]">
+                                        {{ record.score_text }}
+                                    </span>
+                                </td>
+                                <td data-label="评分时间">{{ formatDateTime(record.rating_time) }}</td>
+                                <td data-label="操作">
+                                    <a :href="'http://127.0.0.1:5000/results?image=' + record.image_id" 
+                                       class="button">查看图片</a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        new Vue({
+            el: '#app',
+            data: {
+                records: [],
+                filteredRecords: [],
+                loading: true,
+                searchQuery: ''
+            },
+            mounted() {
+                this.loadRatingRecords();
+            },
+            methods: {
+                // 加载评分记录
+                loadRatingRecords() {
+                    this.loading = true;
+                    
+                    // 获取URL参数中的图片ID（如果有）
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const imageId = urlParams.get('image_id');
+                    
+                    let url = 'http://127.0.0.1:5000/rating_records';
+                    if (imageId) {
+                        url += `?image_id=${imageId}`;
+                    }
+                    
+                    axios.get(url)
+                        .then(response => {
+                            this.records = response.data.records;
+                            this.filteredRecords = [...this.records];
+                            this.loading = false;
+                        })
+                        .catch(error => {
+                            console.error('Error loading rating records:', error);
+                            this.loading = false;
+                            alert('加载评分历史记录失败');
+                        });
+                },
+                
+                // 格式化日期时间
+                formatDateTime(timestamp) {
+                    const date = new Date(timestamp);
+                    return date.toLocaleString('zh-CN', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit'
+                    });
+                },
+                
+                // 获取评分样式
+                getScoreBadgeClass(score) {
+                    if (score === 1) return 'score-like';
+                    if (score === -1) return 'score-dislike';
+                    return 'score-neutral';
+                },
+                
+                // 过滤记录
+                filterRecords() {
+                    if (!this.searchQuery) {
+                        this.filteredRecords = [...this.records];
+                        return;
+                    }
+                    
+                    const query = this.searchQuery.toLowerCase();
+                    this.filteredRecords = this.records.filter(record => {
+                        return record.image_id.toLowerCase().includes(query) ||
+                               record.score_text.includes(query);
+                    });
+                }
+            }
+        });
+    </script>
+</body>
+</html> 
