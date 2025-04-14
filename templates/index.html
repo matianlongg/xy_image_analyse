@@ -939,6 +939,17 @@
             background-color: rgba(0, 0, 0, 0.6);
             /* 半透明背景 */
         }
+
+        .modebg {
+            position: absolute;
+            top: 0px;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #0000007a;
+        }
     </style>
 </head>
 
@@ -981,7 +992,8 @@
         <div class="fixed-menu">
             <div class="menu-container">
                 {% if session.role == 'admin' %}
-                <a href="/user_management" class="logo"><i class="fas fa-camera-retro"></i>Design Creativity Evaluation</a>
+                <a href="/user_management" class="logo"><i class="fas fa-camera-retro"></i>Design Creativity
+                    Evaluation</a>
                 {% endif %}
                 {% if session.role == 'user' %}
                 <a href="#" class="logo"><i class="fas fa-camera-retro"></i>Design Creativity Evaluation</a>
@@ -1002,10 +1014,10 @@
                 </div>
             </div>
             <div style="color: white;position: absolute;right: 20px;top: 20px;display: flex;align-items: center;">
-                <span >welcome, {$ session.username $}</span>
+                <span>welcome, {$ session.username $}</span>
                 <a class="nav-link" href="/logout" style="color: white;margin-left: 20px;">exit</a>
             </div>
-           
+
         </div>
 
         <div class="container">
@@ -1163,8 +1175,11 @@
                                 :style="{ cursor: submitting ? 'not-allowed' : 'pointer' }">
 
                             <!-- 图片名称 -->
-                            <div class="image-name">
-                                {{ truncateFilename(image.original_name || 'Untitled image', image) }}
+                            <div class="image-name"
+                                style="display: flex; align-items: center;justify-content: space-between;">
+                                <div>{{ truncateFilename(image.original_name || 'Untitled image', image) }}</div>
+                                <i class="fas fa-search" @click.stop="showFullImage(image)"
+                                    style="cursor: pointer;;"></i>
                             </div>
 
                             <!-- 评分指示器 -->
@@ -1242,6 +1257,14 @@
                 </template>
             </div>
         </div>
+
+        <!-- 添加全屏图片模态框 -->
+        <div class="modebg" v-if="fullImageModal" tabindex="-1" aria-hidden="true">
+            <div  style="position: relative;">
+                <img :src="fullImageUrl" alt="Full size image" style="max-width: 87vh;">
+                <i class="fas fa-times-circle" @click="fullImageModal = false" style="position: absolute; top: 20px; right: 20px; font-size: 30px; color: white; cursor: pointer; text-shadow: 0 0 5px rgba(0,0,0,0.5);"></i>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -1262,6 +1285,8 @@
                 response: null,
                 currentTaskType: null,
                 taskPrompt: '',
+                fullImageUrl: '',
+                fullImageModal: null,
             },
             mounted() {
                 // 检查URL参数，判断是否直接进入评分页面
@@ -1275,6 +1300,11 @@
                 }
             },
             methods: {
+                // 显示全屏图片
+                showFullImage(image) {
+                    this.fullImageUrl = image.url;
+                    this.fullImageModal = true;
+                },
                 // 切换视图
                 switchView(view) {
                     if (view === 'rating' && this.currentView !== 'rating') {
