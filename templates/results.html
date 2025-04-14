@@ -360,6 +360,65 @@
                 grid-template-columns: 1fr;
             }
         }
+        .bigimage {
+            /* 增加不透明度 */
+            position: absolute;
+            bottom: 5px;
+            right: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+            transition: all 0.2s;
+            z-index: 100;
+            /* 极大提高z-index值 */
+            font-size: 20px;
+            /* 增加边框可见性 */
+            pointer-events: auto;
+            /* 确保可以接收点击事件 */
+        }
+        .bigimage:hover {
+            color: #3cc5e7;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+        }
+        .modebg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: rgba(0, 0, 0, 0.85);
+            z-index: 2000;
+        }
+
+        .modebg img {
+            max-width: 90vw;
+            max-height: 90vh;
+            object-fit: contain;
+            border-radius: 4px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .modebg .close-icon {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 30px;
+            color: white;
+            cursor: pointer;
+            text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+            transition: all 0.3s;
+            z-index: 2001;
+        }
+
+        .modebg .close-icon:hover {
+            transform: scale(1.2);
+            color: #e74c3c;
+        }
     </style>
 </head>
 <body>
@@ -429,8 +488,11 @@
                     <div class="image-grid">
                         <div v-for="(image, index) in images" :key="image.id" 
                              :class="['image-card', hasDuplicateRating(image) ? 'duplicate' : '']">
-                            <div class="image-container">
+                            <div class="image-container" style="position: relative;">
                                 <img :src="image.url" :alt="'排名 #' + (index + 1)">
+                                <div class="bigimage" @click.stop.prevent="showFullImage(image)">
+                                    <i class="fas fa-search"></i>
+                                </div>
                             </div>
                             <div class="image-info">
                                 <div class="image-rank">Raking #{{ index + 1 }}</div>
@@ -503,6 +565,12 @@
                 </div>
             </div>
         </div>
+        <div class="modebg" v-if="fullImageModal" tabindex="-1" aria-hidden="true">
+            <div style="position: relative;">
+                <img :src="fullImageUrl" alt="Full size image">
+                <i class="fas fa-times-circle close-icon" @click="fullImageModal = false"></i>
+            </div>
+        </div>
     </div>
     
     <script>
@@ -512,12 +580,19 @@
                 images: [],
                 loading: true,
                 openStatsIds: new Set(),
-                clearRelationValue: 0
+                clearRelationValue: 0,
+                fullImageModal: false,
+                fullImageUrl: ''
             },
             mounted() {
                 this.loadRankedImages();
             },
             methods: {
+                 // 显示全屏图片
+                 showFullImage(image) {
+                    this.fullImageUrl = image.url;
+                    this.fullImageModal = true;
+                },
                 // 加载排序后的图片
                 loadRankedImages(refresh = false) {
                     this.loading = true;
